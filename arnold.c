@@ -11,6 +11,7 @@
 #define ITLIMIT 300
 #define ABS(X) ((X) >= 0.0 ? (X) : -(X))
 #define MOD1(X) ((X) - floor(X))
+#define A_RES 10.0
 
 #define N_THREADS 8
 /* A coloured pixel. */
@@ -168,26 +169,40 @@ static inline double circle_map(double O, double K, double theta) {
     return MOD1(theta + O - K / (2*M_PI) * sin(2*M_PI * theta));
 }
 
-int get_recurrence(double O, double K, double eps, double init) {
+unsigned get_recn(double O, double K, double eps, double init) {
     /*Ignore first few iterations to get to convergence */
     double theta_0 = init;
     for (int i = 0; i < RMFIRST; i++)
         theta_0 = circle_map(O, K, theta_0);
     /*calculate recurrence number*/
     double theta_1 = circle_map(O,K, theta_0);
-    int n = 0;
+    unsigned n = 0;
     for (; n < ITLIMIT && ABS(theta_1 - theta_0) >= eps; n++)
         theta_1 = circle_map(O, K, theta_1);
     return n;
 }
 
+unsigned get_avg_recn(double O, double K, double eps) {
+    /*unsigned acc = 0;
+    double stepsz = 1.0/A_RES;
+    for (double init = 0.0; init < 1.0; init += stepsz) {
+        acc += get_recn(O, K, eps, init);
+    }
+    return acc / A_RES;*/
+    //unsigned acc = 0;
+    return get_recn(O, K, eps, 0.1);
+    /*acc += get_recn(O, K, eps, 0.9);
+    acc += get_recn(O, K, eps, 0.5);*/
+    //return acc / 1; 
+}
+
 pixel_t color_from_recn(int n) {
     pixel_t colo;
-    if (n < 6) {
+    if (n < 10) {
 
     } else if (n < 50) {
         colo.blue = 255;
-    } else if (n < 200) {
+    } else if (n < 140) {
         colo.green = 255;
     } else {
         colo.red = 255;
@@ -206,7 +221,7 @@ void * color_segment(void* args) {
     for (size_t oidx = offset; oidx < offset + n; oidx++, o += plot.o_stepsz) {
         double k = plot.k_low;
         for (size_t kidx = 0; kidx < plot.bitmap.height; kidx++, k += plot.k_stepsz) {
-            int n = get_recurrence(o, k, plot.eps, RECINIT);
+            int n = get_recn(o, k, plot.eps,0.5);
             pixel_t colo = color_from_recn(n);
             pixel_t *px = pixel_at (&plot.bitmap, oidx, kidx);
             px->red = colo.red;
@@ -259,6 +274,6 @@ void mk_plot(size_t k_steps, size_t o_steps, double k_low, double k_high, double
 int main ()
 {
     /* Write the image to a file 'fruit.png'. */
-    mk_plot(3000, 1500, 0.0f, 4*M_PI, 0.0f, 1.0f, 0.0001f);
+    mk_plot(600, 600, 0.0f, 4*M_PI, -0.5f, 1.0f, 0.0001f);
   
 }
