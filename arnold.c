@@ -9,13 +9,13 @@
 
 #define RECINIT 0.1f
 #define RMFIRST 200
-#define ITLIMIT 1000
+#define ITLIMIT 10000
 #define ABS(X) ((X) >= 0.0 ? (X) : -(X))
 #define MOD1(X) ((X) - floor(X))
 #define A_RES 10.0
 
 #define DEF_OL 0.0f
-#define DEF_OH 1.0f
+#define DEF_OH 0.5f
 #define DEF_KL 0.0f
 #define DEF_KH (4*M_PI)
 
@@ -23,7 +23,7 @@
 
 #define MULTIPREC
 #ifdef MULTIPREC
-#define PRECISION 245
+#define PRECISION 500
 mpfr_t TAU;
 mpfr_t EPS;
 #endif
@@ -122,7 +122,7 @@ void * color_segment_mp(void* args) {
     size_t offset = a->offset;
     size_t n = a->n;
     size_t pct = n / 10;
-    size_t pctcnt = 1;
+    size_t pctcnt = 0;
     mpfr_t theta_0, theta_1, kmp, tmp, delta_k_ot, k_low_ot;
     mpfr_inits2(PRECISION, theta_0, theta_1, kmp, tmp, delta_k_ot, k_low_ot, NULL);
     mpfr_d_div(delta_k_ot, plot.k_stepsz, TAU, MPFR_RNDN);
@@ -140,8 +140,9 @@ void * color_segment_mp(void* args) {
 
         }
         o += plot.o_stepsz;
-        if ((oidx + 1 - offset) % pct == 0) {
-            printf("%zu0/100 completed\n", pctcnt++);
+        if ((oidx - offset) * 100 / n > pctcnt) {
+            pctcnt = (oidx - offset) * 100 / n;
+            printf("%zu%% completed\n", pctcnt);
         }
     }
     printf("segment complete.\n");
@@ -248,7 +249,7 @@ int main (int argc, char **argv)
 
     printf("bpl: %d\n", mp_bits_per_limb);
     size_t h = 3000, w = 1500;
-    double ol = DEF_OL, oh = DEF_OH, kl = DEF_KL, kh = DEF_KH, eps = 0.00001f;
+    double ol = DEF_OL, oh = DEF_OH, kl = DEF_KL, kh = DEF_KH, eps = 0.0003f;
     if (argc > 1) {
         w = atol(argv[1]);
         h = atol(argv[2]);
